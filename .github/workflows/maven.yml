@@ -7,14 +7,14 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    timeout-minutes: 30  # Set a timeout for the job to avoid premature termination
+    timeout-minutes: 30  # Set a timeout for the job to prevent hanging indefinitely
 
     steps:
-      # Checkout the code from the repository
+      # Step 1: Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Set up JDK 21
+      # Step 2: Set up JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -22,22 +22,38 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Purge the Maven local repository to avoid stale dependencies (optional)
+      # Step 3: Clear Maven cache (optional, but useful for stale dependencies)
       - name: Clear Maven cache
         run: mvn dependency:purge-local-repository
 
-      # Build the project with Maven
+      # Step 4: Build the project with Maven
       - name: Build with Maven
         env:
           GREETING: ${{ secrets.GREETING }}  # Use the GREETING environment variable from secrets
-        run: mvn -B package --file pom.xml -X  # -X for verbose Maven output to help with debugging
+        run: mvn -B package --file pom.xml -X  # -X provides verbose Maven output for debugging
 
-      # Run the Spring Boot application
+      # Step 5: Execute the Spring Boot JAR file
       - name: Execute Jar File
         run: |
-          # Kill any process on port 80 (optional)
-          sudo lsof -t -i:80 | xargs -r sudo kill -9
+          # Kill any process running on port 8080 (to avoid conflicts)
+          sudo lsof -t -i:8080 | xargs -r sudo kill -9
+          
           # Run the Spring Boot application in the background
-          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar > app.log &
-          # Tail the logs to monitor the app's startup
-          tail -f app.log
+          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar --server.port=8080 > app.log 2>&1 &
+          
+          # Wait for a maximum of 60 seconds for the app to start
+          timeout=60
+          while ! grep -q 'Started' app.log; do
+            sleep 2
+            timeout=$((timeout - 2))
+            if [ $timeout -le 0 ]; then
+              echo "Application failed to start within 60 seconds."
+              cat app.log  # Display logs for debugging
+              exit 1
+            fi
+          done
+          echo "Application started successfully."
+
+      # Step 6: Display the last 20 lines of the application logs (optional for verification)
+      - name: Display Application Logs
+        run: tail -n 20 app.log
