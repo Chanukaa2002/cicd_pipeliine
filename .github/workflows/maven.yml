@@ -25,4 +25,4 @@ jobs:
           # Kill any process on port 80 (only if needed)
           sudo lsof -t -i:80 | xargs -r sudo kill -9
           # Run the jar file (make sure the path is correct)
-          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar
+          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar &
