@@ -36,7 +36,7 @@ public class StudentController {
 
     @GetMapping("/hello")
     public String getHello() {
-        return "Hello " + greetingVariable;
+        return "Hello dear " + greetingVariable;
     }
     //add std
     @Operation(summary = "Add a students")
