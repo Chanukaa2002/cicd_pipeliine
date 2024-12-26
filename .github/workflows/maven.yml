@@ -30,4 +30,4 @@ jobs:
         GREETING: ${{ secrets.GREETING }}
       run: mvn -B package --file pom.xml
     - name: Execute Jar File
-      run: sudo kill -9 'sudo lsof -t -i:80' & sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar $
+      run: sudo kill -9 `sudo lsof -t -i:80` & sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar $
