@@ -7,22 +7,37 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    timeout-minutes: 30  # Set a timeout for the job to avoid premature termination
 
     steps:
-      - uses: actions/checkout@v4
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
+
+      # Purge the Maven local repository to avoid stale dependencies (optional)
+      - name: Clear Maven cache
+        run: mvn dependency:purge-local-repository
+
+      # Build the project with Maven
       - name: Build with Maven
         env:
-          GREETING: ${{ secrets.GREETING }}
-        run: mvn -B package --file pom.xml -X
+          GREETING: ${{ secrets.GREETING }}  # Use the GREETING environment variable from secrets
+        run: mvn -B package --file pom.xml -X  # -X for verbose Maven output to help with debugging
+
+      # Run the Spring Boot application
       - name: Execute Jar File
         run: |
-          # Kill any process on port 80 (only if needed)
+          # Kill any process on port 80 (optional)
           sudo lsof -t -i:80 | xargs -r sudo kill -9
-          # Run the jar file (make sure the path is correct)
-          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar &
+          # Run the Spring Boot application in the background
+          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar > app.log &
+          # Tail the logs to monitor the app's startup
+          tail -f app.log
