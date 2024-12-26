@@ -31,7 +31,7 @@ public class StudentController {
         return studentService.getStudentById(id);
     }
 
-    @Value("${GREETING_VARIABLE:Default}")
+    @Value("${GREETING:Default}")
     private String greetingVariable;
 
     @GetMapping("/hello")
