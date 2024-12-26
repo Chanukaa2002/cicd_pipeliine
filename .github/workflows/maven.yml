@@ -19,7 +19,7 @@ jobs:
       - name: Build with Maven
         env:
           GREETING: ${{ secrets.GREETING }}
-        run: mvn -B package --file pom.xml
+        run: mvn -B package --file pom.xml -X
       - name: Execute Jar File
         run: |
           # Kill any process on port 80 (only if needed)
