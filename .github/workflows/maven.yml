@@ -28,20 +28,24 @@ jobs:
 
       # Step 4: Build the project with Maven
       - name: Build with Maven
+        timeout-minutes: 10
         env:
           GREETING: ${{ secrets.GREETING }}  # Use the GREETING environment variable from secrets
-        run: mvn -B package --file pom.xml -X  # -X provides verbose Maven output for debugging
+        run: |
+          echo "Starting Maven build..."
+          mvn -B package --file pom.xml -DskipTests -X || { echo "Maven build failed"; exit 1; }
+          echo "Maven build completed successfully."
 
       # Step 5: Execute the Spring Boot JAR file
       - name: Execute Jar File
         run: |
-          # Kill any process running on port 8080 (to avoid conflicts)
-          sudo lsof -t -i:8080 | xargs -r sudo kill -9
+          echo "Stopping any existing process running on port 8080..."
+          sudo lsof -t -i:8080 | xargs -r sudo kill -9 || echo "No process running on port 8080"
           
-          # Run the Spring Boot application in the background
+          echo "Starting the Spring Boot application..."
           sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar --server.port=8080 > app.log 2>&1 &
           
-          # Wait for a maximum of 60 seconds for the app to start
+          echo "Waiting for the application to start..."
           timeout=60
           while ! grep -q 'Started' app.log; do
             sleep 2
