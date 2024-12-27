@@ -43,7 +43,7 @@ jobs:
           sudo lsof -t -i:80 | xargs -r sudo kill -9 || echo "No process running on port 80"
           
           echo "Starting the Spring Boot application..."
-          sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar --server.port=80 > app.log 2>&1 &
+          sudo java -jar actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar --server.port=80 > app.log 2>&1 &
           
           echo "Waiting for the application to start..."
           timeout=60
