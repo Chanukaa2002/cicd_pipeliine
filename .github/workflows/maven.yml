@@ -22,11 +22,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Step 3: Clear Maven cache (optional, but useful for stale dependencies)
-      - name: Clear Maven cache
-        run: mvn dependency:purge-local-repository
-
-      # Step 4: Build the project with Maven
+      # Step 3: Build the project with Maven
       - name: Build with Maven
         timeout-minutes: 10
         env:
@@ -36,14 +32,19 @@ jobs:
           mvn -B package --file pom.xml -DskipTests -X || { echo "Maven build failed"; exit 1; }
           echo "Maven build completed successfully."
 
-      # Step 5: Execute the Spring Boot JAR file
+      # Step 4: Execute the Spring Boot JAR file
       - name: Execute Jar File
         run: |
           echo "Stopping any existing process running on port 80..."
           sudo lsof -t -i:80 | xargs -r sudo kill -9 || echo "No process running on port 80"
           
           echo "Starting the Spring Boot application..."
-          sudo java -jar actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar --server.port=80 > app.log 2>&1 &
+          JAR_PATH=$(find ./target -name "*.jar" -print -quit)  # Automatically find the JAR file
+          if [ -z "$JAR_PATH" ]; then
+            echo "JAR file not found!"
+            exit 1
+          fi
+          sudo java -jar $JAR_PATH --server.port=80 > app.log 2>&1 &
           
           echo "Waiting for the application to start..."
           timeout=60
@@ -58,6 +59,6 @@ jobs:
           done
           echo "Application started successfully."
 
-      # Step 6: Display the last 20 lines of the application logs (optional for verification)
+      # Step 5: Display the last 20 lines of the application logs (optional for verification)
       - name: Display Application Logs
         run: tail -n 20 app.log
