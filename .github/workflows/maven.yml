@@ -22,28 +22,43 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Step 3: Build the project with Maven
+      # Step 3: Display current directory and list files (debugging step)
+      - name: Display Current Directory and Files
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in the repository:"
+          ls -la
+
+      # Step 4: Build the project with Maven
       - name: Build with Maven
         timeout-minutes: 10
-        env:
-          GREETING: ${{ secrets.GREETING }}  # Use the GREETING environment variable from secrets
         run: |
           echo "Starting Maven build..."
           mvn -B package --file pom.xml -DskipTests -X || { echo "Maven build failed"; exit 1; }
           echo "Maven build completed successfully."
 
-      # Step 4: Execute the Spring Boot JAR file
-      - name: Execute Jar File
+      # Step 5: Verify .jar File Creation
+      - name: Check for JAR File
+        run: |
+          echo "Checking for the generated JAR file..."
+          JAR_PATH=$(find ./target -name "*.jar" -print -quit)
+          if [ -z "$JAR_PATH" ]; then
+            echo "Error: JAR file not found in the target directory."
+            exit 1
+          fi
+          echo "JAR file found: $JAR_PATH"
+
+      # Step 6: Stop any running process on port 80 (if needed)
+      - name: Stop Existing Process on Port 80
         run: |
           echo "Stopping any existing process running on port 80..."
           sudo lsof -t -i:80 | xargs -r sudo kill -9 || echo "No process running on port 80"
-          
-          echo "Starting the Spring Boot application..."
+
+      # Step 7: Execute the Spring Boot JAR file
+      - name: Execute Jar File
+        run: |
           JAR_PATH=$(find ./target -name "*.jar" -print -quit)  # Automatically find the JAR file
-          if [ -z "$JAR_PATH" ]; then
-            echo "JAR file not found!"
-            exit 1
-          fi
+          echo "Starting the Spring Boot application with JAR file: $JAR_PATH"
           sudo java -jar $JAR_PATH --server.port=80 > app.log 2>&1 &
           
           echo "Waiting for the application to start..."
@@ -59,6 +74,6 @@ jobs:
           done
           echo "Application started successfully."
 
-      # Step 5: Display the last 20 lines of the application logs (optional for verification)
+      # Step 8: Display the last 20 lines of application logs
       - name: Display Application Logs
         run: tail -n 20 app.log
