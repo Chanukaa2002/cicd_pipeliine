@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 30  # Set a timeout for the job to prevent hanging indefinitely
 
     steps:
