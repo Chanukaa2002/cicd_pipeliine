@@ -2,63 +2,40 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]  # Changed to 'main'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30  # Set a timeout for the job to prevent hanging indefinitely
+    runs-on: self-hosted  # Keep as 'self-hosted' if you're using a custom runner, or use 'ubuntu-latest' for GitHub's hosted runner.
+
+    env:
+      GREEDING: "Hello, this is a greeting environment variable"
 
     steps:
-      # Step 1: Checkout the code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      # Step 2: Set up JDK 21
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v2
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      # Step 3: Build the project with Maven
       - name: Build with Maven
-        timeout-minutes: 10
-        run: |
-          echo "Starting Maven build..."
-          mvn -B package --file pom.xml -DskipTests -X || { echo "Maven build failed"; exit 1; }
-          echo "Maven build completed successfully."
+        run: mvn -B package --file pom.xml
+        timeout-minutes: 1 # Exit if this step exceeds 60 seconds
 
-      # Step 4: Execute the specified JAR file
-      - name: Execute Jar File
+      - name: Verify JAR File
+        run: ls -l /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/
+        timeout-minutes: 1 # Exit if this step exceeds 60 seconds
+
+      - name: Stop any process running on port 80
         run: |
-          echo "Stopping any existing process running on port 80..."
-          sudo lsof -t -i:80 | xargs -r sudo kill -9 || echo "No process running on port 80"
-          
-          echo "Starting the Spring Boot application using the specified JAR file..."
-          JAR_PATH="/home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar"
-          
-          if [ ! -f "$JAR_PATH" ]; then
-            echo "Error: JAR file not found at $JAR_PATH."
-            exit 1
+          if sudo lsof -t -i:80 > /dev/null; then
+            sudo kill -9 $(sudo lsof -t -i:80)
           fi
-          
-          sudo java -jar "$JAR_PATH" --server.port=80 > app.log 2>&1 &
-          
-          echo "Waiting for the application to start..."
-          timeout=60
-          while ! grep -q 'Started' app.log; do
-            sleep 2
-            timeout=$((timeout - 2))
-            if [ $timeout -le 0 ]; then
-              echo "Application failed to start within 60 seconds."
-              cat app.log  # Display logs for debugging
-              exit 1
-            fi
-          done
-          echo "Application started successfully."
+        timeout-minutes: 1 # Exit if this step exceeds 60 seconds
 
-      # Step 5: Display the last 20 lines of the application logs (optional for verification)
-      - name: Display Application Logs
-        run: tail -n 20 app.log
+      - name: Execute Jar File
+        run: sudo java -jar /home/ubuntu/actions-runner/_work/cicd_pipeliine/cicd_pipeliine/target/test_project-0.0.1-SNAPSHOT.jar &
+        timeout-minutes: 1 # Exit if this step exceeds 60 seconds
